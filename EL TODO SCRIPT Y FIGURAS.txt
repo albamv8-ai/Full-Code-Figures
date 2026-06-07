@@ -1,0 +1,280 @@
+"""
+================================================================================
+BIOMOLECULAR MASS QUANTIZATION - COMPLETE ANALYSIS
+================================================================================
+All-in-one script for online IDEs
+Model: M = L₀ · (e^(25α))^q
+================================================================================
+"""
+
+import numpy as np
+import math
+import matplotlib.pyplot as plt
+import pandas as pd
+from scipy import stats
+
+# ============================================================
+# MODEL PARAMETERS
+# ============================================================
+ALPHA = 0.0072973525693
+L0 = 75.03
+A = math.exp(25 * ALPHA)
+
+print(f"{'='*70}")
+print(f"BIOMOLECULAR MASS QUANTIZATION MODEL")
+print(f"{'='*70}")
+print(f"Model: M = L₀ · A^q")
+print(f"L₀ = {L0} Da (glycine)")
+print(f"A = e^(25α) = {A:.8f}")
+print(f"α = {ALPHA:.12f}")
+print(f"{'='*70}\n")
+
+# ============================================================
+# DATASET: 120 PROTEINS
+# ============================================================
+proteins = {
+    "Insulin": 5808.0, "Ubiquitin": 8565.0, "Cytochrome_c": 11700.0,
+    "Ribonuclease_A": 13698.0, "Lysozyme": 14307.0, "Beta_2_microglobulin": 11800.0,
+    "Histone_H4": 11236.0, "Histone_H3": 15276.0, "Histone_H2A": 13960.0,
+    "Histone_H2B": 13774.0, "Aprotinin": 6512.0, "Barnase": 12400.0,
+    "Barstar": 10100.0, "Thioredoxin": 11673.0, "Ferredoxin": 10800.0,
+    "Phospholipase_A2": 14000.0, "Crambin": 4750.0, "S100A1": 10400.0,
+    "S100B": 10713.0, "Cystatin_C": 13350.0, "Glucagon": 3483.0,
+    "Parathyroid_hormone": 9425.0, "Calcitonin": 3418.0, "Epidermal_growth_factor": 6045.0,
+    "Nerve_growth_factor_beta": 13261.0, "Calmodulin": 16700.0, "Troponin_C": 17800.0,
+    "Interleukin_2": 15400.0, "Interleukin_8": 8400.0, "Human_defensin_5": 3440.0,
+    "Apolipoprotein_C_II": 8900.0, "Apolipoprotein_C_III": 8800.0, "Thymosin_beta_4": 4963.0,
+    "Metallothionein_2A": 6100.0, "Cytochrome_b5": 11700.0, "Ribosomal_protein_L30": 14500.0,
+    "Acyl_coenzyme_A_binding_protein": 9900.0, "Granulocyte_colony_stimulating_factor": 18800.0,
+    "Interferon_alpha_2": 19000.0, "Erythropoietin": 18300.0,
+    "Beta_actin": 41700.0, "Carbonic_anhydrase_II": 29000.0, "Triosephosphate_isomerase": 26600.0,
+    "Glyceraldehyde_3_phosphate_dehydrogenase": 36000.0, "Lactate_dehydrogenase_A": 36500.0,
+    "Creatine_kinase_M": 43000.0, "Phosphoglycerate_kinase_1": 44500.0, "Adenylate_kinase_1": 21500.0,
+    "Dihydrofolate_reductase": 21600.0, "Thymidylate_synthase": 36000.0, "Ovalbumin": 45000.0,
+    "Casein_kappa": 22000.0, "Glutathione_S_transferase_P1": 23356.0, "Peroxiredoxin_1": 22000.0,
+    "Proteinase_K": 28900.0, "Subtilisin_Carlsberg": 27600.0, "Chymotrypsinogen_A": 25700.0,
+    "Trypsin": 23300.0, "Elastase": 25900.0, "Pepsin_A": 35000.0, "Prolactin": 22000.0,
+    "Growth_hormone": 22100.0, "Enolase_1": 47000.0, "Aldolase_A": 39500.0,
+    "Malate_dehydrogenase_cytoplasmic": 36500.0, "Isocitrate_dehydrogenase_1": 47000.0,
+    "Aspartate_aminotransferase": 47000.0, "Alanine_aminotransferase": 43000.0,
+    "Ornithine_transcarbamylase": 36000.0, "Arginase_1": 35000.0, "Paraoxonase_1": 38000.0,
+    "Haptoglobin": 40000.0, "Hemopexin": 45000.0, "Pancreatic_lipase": 47000.0,
+    "Deoxyribonuclease_I": 31000.0, "Ribonuclease_H1": 20000.0, "DNA_polymerase_beta": 39000.0,
+    "Phospholipase_A1": 48000.0, "Catechol_O_methyltransferase": 25000.0,
+    "Phenylethanolamine_N_methyltransferase": 23000.0,
+    "Hemoglobin": 64500.0, "Serum_albumin": 66460.0, "Transferrin": 80000.0,
+    "Immunoglobulin_G": 150000.0, "Fibrinogen": 340000.0, "Thyroglobulin": 660000.0,
+    "DNA_polymerase_alpha": 180000.0, "Myosin_heavy_chain": 220000.0, "Dystrophin": 427000.0,
+    "Collagen_type_I": 300000.0, "Factor_VIII": 330000.0, "Plasminogen": 92000.0,
+    "Prothrombin": 72000.0, "Catalase": 60000.0, "Glucokinase": 52000.0,
+    "Pyruvate_kinase": 58000.0, "Acetyl_CoA_carboxylase": 280000.0, "Fatty_acid_synthase": 273000.0,
+    "ATP_synthase_beta": 55000.0, "Apolipoprotein_B_100": 512000.0, "Tubulin_alpha_1B": 50100.0,
+    "Vimentin": 54000.0, "Lamin_A": 74000.0, "Fibronectin": 230000.0, "Integrin_beta_1": 90000.0,
+    "E_cadherin": 97000.0, "Occludin": 65000.0, "Anion_exchange_1": 102000.0,
+    "Sodium_potassium_ATPase_alpha_1": 112000.0, "Glucose_transporter_1": 54000.0,
+    "Glucose_transporter_2": 58000.0, "Beta_catenin": 92000.0,
+    "Mechanistic_target_of_rapamycin": 289000.0, "AMP_activated_protein_kinase_alpha_1": 63000.0,
+    "Low_density_lipoprotein_receptor": 95000.0, "HMG_CoA_reductase": 97000.0,
+    "Lipoprotein_lipase": 55000.0, "Cholesteryl_ester_transfer_protein": 74000.0,
+    "Cyclooxygenase_1": 65000.0, "Cyclooxygenase_2": 68996.0,
+}
+
+# ============================================================
+# CALCULATE ERRORS
+# ============================================================
+results = []
+for name, mass_real in proteins.items():
+    q = round(math.log(mass_real / L0) / math.log(A))
+    mass_predicted = L0 * (A ** q)
+    relative_error = abs(mass_real - mass_predicted) / mass_real * 100
+    
+    if mass_real < 20000:
+        category = "Small"
+    elif mass_real < 50000:
+        category = "Medium"
+    else:
+        category = "Large"
+    
+    results.append({
+        "Molecule": name,
+        "Mass_Da": mass_real,
+        "Quantum_Number_q": q,
+        "Predicted_Mass_Da": mass_predicted,
+        "Relative_Error_%": relative_error,
+        "Category": category,
+        "Is_Outlier": relative_error > 8.0
+    })
+
+df = pd.DataFrame(results)
+
+# ============================================================
+# PRINT STATISTICS
+# ============================================================
+print(f"{'='*70}")
+print(f"STATISTICS (N={len(df)} proteins)")
+print(f"{'='*70}")
+print(f"Mean error: {df['Relative_Error_%'].mean():.2f}%")
+print(f"Median error: {df['Relative_Error_%'].median():.2f}%")
+print(f"Std deviation: {df['Relative_Error_%'].std():.2f}%")
+print(f"Maximum error: {df['Relative_Error_%'].max():.2f}%")
+print(f"Minimum error: {df['Relative_Error_%'].min():.2f}%")
+print(f"\nSamples ≤5% error: {(df['Relative_Error_%'] <= 5).sum()}/{len(df)} ({(df['Relative_Error_%'] <= 5).mean()*100:.1f}%)")
+print(f"Samples >8% error: {(df['Relative_Error_%'] > 8).sum()}/{len(df)} ({(df['Relative_Error_%'] > 8).mean()*100:.1f}%)")
+print(f"{'='*70}\n")
+
+# R² calculation
+SS_tot = np.sum((df['Mass_Da'] - np.mean(df['Mass_Da']))**2)
+SS_res = np.sum((df['Mass_Da'] - df['Predicted_Mass_Da'])**2)
+R2 = 1 - (SS_res / SS_tot)
+
+print(f"Coefficient of Determination (R²): {R2:.4f}")
+print(f"{'='*70}\n")
+
+# ============================================================
+# FIGURE 1: Error vs. Molecular Mass
+# ============================================================
+print("Generating Figure 1: Error vs. Molecular Mass...")
+fig1, ax1 = plt.subplots(1, 1, figsize=(10, 7))
+
+colors = {"Small": "#FF6B6B", "Medium": "#4ECDC4", "Large": "#45B7D1"}
+for cat, color in colors.items():
+    subset = df[df["Category"] == cat]
+    ax1.scatter(subset["Mass_Da"], subset["Relative_Error_%"], 
+                c=color, label=cat, s=60, alpha=0.7, edgecolors='white', linewidth=0.5)
+
+outliers = df[df["Is_Outlier"]]
+if not outliers.empty:
+    ax1.scatter(outliers["Mass_Da"], outliers["Relative_Error_%"], 
+                c='#FF4757', s=100, alpha=0.9, edgecolors='black', linewidth=1.5, 
+                label='Outliers (>8%)', marker='D', zorder=5)
+
+ax1.axhline(y=5.0, color='orange', linestyle='--', linewidth=1.5, label='5% Threshold', alpha=0.8)
+ax1.set_xscale('log')
+ax1.set_xlabel('Molecular Mass (Da)', fontsize=12, fontweight='bold')
+ax1.set_ylabel('Relative Error (%)', fontsize=12, fontweight='bold')
+ax1.set_title('Fig. 1: Model Error vs. Molecular Mass (N=120 proteins)', fontsize=13, fontweight='bold', pad=15)
+ax1.grid(True, alpha=0.3, linestyle=':')
+ax1.legend(loc='upper right', fontsize=10, frameon=True, shadow=True)
+
+plt.tight_layout()
+try:
+    plt.savefig('fig1_error_vs_mass.png', dpi=300, bbox_inches='tight')
+    print("✅ Figure 1 saved as 'fig1_error_vs_mass.png'")
+except:
+    print("⚠️  Could not save Figure 1 (online IDE limitation)")
+plt.show()
+plt.close()
+
+# ============================================================
+# FIGURE 2: Error Distribution (Histogram)
+# ============================================================
+print("\nGenerating Figure 2: Error Distribution...")
+fig2, ax2 = plt.subplots(1, 1, figsize=(10, 7))
+
+n, bins, patches = ax2.hist(df["Relative_Error_%"], bins=15, 
+                             edgecolor='black', linewidth=1.2, 
+                             color='#4ECDC4', alpha=0.7)
+
+ax2.axvline(x=5.0, color='orange', linestyle='--', linewidth=2, label='5% Threshold')
+mean_error = df["Relative_Error_%"].mean()
+ax2.axvline(x=mean_error, color='red', linestyle='-', linewidth=2, 
+            label=f'Mean: {mean_error:.2f}%')
+
+ax2.set_xlabel('Relative Error (%)', fontsize=12, fontweight='bold')
+ax2.set_ylabel('Frequency', fontsize=12, fontweight='bold')
+ax2.set_title('Fig. 2: Error Distribution in 120 Proteins', fontsize=13, fontweight='bold', pad=15)
+ax2.legend(loc='upper right', fontsize=11)
+ax2.grid(axis='y', alpha=0.3, linestyle=':')
+
+plt.tight_layout()
+try:
+    plt.savefig('fig2_error_distribution.png', dpi=300, bbox_inches='tight')
+    print("✅ Figure 2 saved as 'fig2_error_distribution.png'")
+except:
+    print("⚠️  Could not save Figure 2 (online IDE limitation)")
+plt.show()
+plt.close()
+
+# ============================================================
+# FIGURE 3: Error by Category (Boxplot)
+# ============================================================
+print("\nGenerating Figure 3: Error by Category...")
+fig3, ax3 = plt.subplots(1, 1, figsize=(10, 7))
+
+categories = ['Small', 'Medium', 'Large']
+data = [df[df["Category"] == cat]["Relative_Error_%"].values for cat in categories]
+
+bp = ax3.boxplot(data, labels=categories, patch_artist=True,
+                 boxprops=dict(facecolor='#4ECDC4', color='black'),
+                 medianprops=dict(color='red', linewidth=2),
+                 whiskerprops=dict(color='black', linewidth=1.5),
+                 capprops=dict(color='black', linewidth=1.5))
+
+ax3.axhline(y=5.0, color='orange', linestyle='--', linewidth=1.5, label='5% Threshold', alpha=0.8)
+ax3.set_ylabel('Relative Error (%)', fontsize=12, fontweight='bold')
+ax3.set_title('Fig. 3: Error Distribution by Protein Size Category', fontsize=13, fontweight='bold', pad=15)
+ax3.grid(axis='y', alpha=0.3, linestyle='--')
+ax3.legend(loc='upper right')
+
+for i, cat in enumerate(categories):
+    mean_val = df[df["Category"] == cat]["Relative_Error_%"].mean()
+    ax3.text(i+1, mean_val + 0.3, f'{mean_val:.2f}%', ha='center', fontsize=10, fontweight='bold')
+
+plt.tight_layout()
+try:
+    plt.savefig('fig3_error_by_category.png', dpi=300, bbox_inches='tight')
+    print("✅ Figure 3 saved as 'fig3_error_by_category.png'")
+except:
+    print("⚠️  Could not save Figure 3 (online IDE limitation)")
+plt.show()
+plt.close()
+
+# ============================================================
+# STATISTICAL VALIDATION
+# ============================================================
+print("\n" + "="*70)
+print("STATISTICAL VALIDATION")
+print("="*70)
+
+# Residual uniformity test
+residuals = []
+for mass in df['Mass_Da']:
+    log_ratio = math.log(mass / L0)
+    q = round(log_ratio / math.log(A))
+    residual = (log_ratio / math.log(A)) - q
+    residuals.append(residual)
+
+ks_statistic, ks_p_value = stats.kstest(residuals, 'uniform', args=(-0.5, 1.0))
+print(f"\nResidual Uniformity Test (Kolmogorov-Smirnov):")
+print(f"  KS Statistic: {ks_statistic:.4f}")
+print(f"  P-value: {ks_p_value:.4f}")
+if ks_p_value > 0.05:
+    print("  ✅ Residuals follow uniform distribution (p > 0.05)")
+else:
+    print("  ⚠️  Residuals deviate from uniform distribution")
+
+# Scalability test
+correlation, corr_p_value = stats.pearsonr(np.log10(df['Mass_Da']), df['Relative_Error_%'])
+print(f"\nScalability Test (Error vs. Mass):")
+print(f"  Pearson correlation: {correlation:+.4f}")
+print(f"  P-value: {corr_p_value:.4f}")
+if abs(correlation) < 0.1 and corr_p_value > 0.05:
+    print("  ✅ No correlation detected - model scales well")
+else:
+    print("  ⚠️  Correlation detected - potential mass-dependent bias")
+
+# ============================================================
+# FINAL SUMMARY
+# ============================================================
+print("\n" + "="*70)
+print("FINAL SUMMARY")
+print("="*70)
+print(f"Model: M = 75.03 · (e^(25α))^q")
+print(f"Dataset: N = {len(df)} proteins")
+print(f"R² = {R2:.4f}")
+print(f"Mean error: {df['Relative_Error_%'].mean():.2f}%")
+print(f"Samples ≤5%: {(df['Relative_Error_%'] <= 5).sum()}/{len(df)} ({(df['Relative_Error_%'] <= 5).mean()*100:.1f}%)")
+print(f"Residual test: p = {ks_p_value:.4f}")
+print(f"Scalability: r = {correlation:+.4f}, p = {corr_p_value:.4f}")
+print("="*70)
+print("\n✅ Analysis completed successfully!")
